@@ -38,8 +38,9 @@ def main():
     categories_names = []
     categories_links = []
     categories_product = []
-    categories_product_review = []
     categories_product_price = []
+    categories_product_link = []
+    categories_product_rating = []
 
     cat_sidebar_li = soup.find_all("li", {"class": "SideBarMenuModuleItem"})
 
@@ -56,41 +57,57 @@ def main():
                 pass
             else:
                 categories_names.append(head)
-    
+    count = 0
     for i in range(len(categories_names)):
         csv_file = csv.writer(open(categories_names[i] + ".csv", "wb")) # Open individual CSV File
-        csv_file.writerow([categories_names[i], "Price", "Rating", "Top Review"])
+        csv_file.writerow(["#", categories_names[i], "Price", "Rating", "Link", "Top Review"]) # Writing header to csv file.
 
-        temp_page = urlopen(categories_links[i])
-        temp_data = temp_page.read()
-        temp_page.close()
+        temp_page = urlopen(categories_links[i]) #opening temp page
+        temp_data = temp_page.read() # Read temp page data
+        temp_page.close() # Close the current page.
         
-        temp_soup = BeautifulSoup(temp_data, "html.parser")
+        temp_soup = BeautifulSoup(temp_data, "html.parser") # Parse html data
 
-        print("Current Category", categories_names[i], "URL: ", categories_links[i], "\n\n")
-        products = temp_soup.find_all("a", {"class": "product-title-link line-clamp line-clamp-2"})
-        reviews = temp_soup.find_all("span", {"class": "seo-avg-rating"})
-        pricings = temp_soup.find_all("div", {"class": "product-variant-price"})
+        print("Current Category", categories_names[i], "URL: ", categories_links[i])
+        products = temp_soup.find_all("a", {"class": "product-title-link line-clamp line-clamp-2"}) # Products [Done]
+        ratings = temp_soup.find_all("span", {"class": "seo-avg-rating"}) # Ratings [Done]
+        price_current = temp_soup.find_all("div", {"class": "price-main-block"}) # Price 
+        links = temp_soup.find_all("div", {"class": ["search-result-productimage gridview", "search-result-productimage listview"]}) # Links [Done]
+
+        #print("\n\n", links, "\n\n")
+        for link in links:
+            li = link.find_all("a", {"class": "display-block"})
+            for i in range(len(li)):
+                #print(li[i].get("href"))
+                categories_product_link.append(li[i].get("href"))
+
+        for i in range(len(products)): # For i in the range of products total
+            try:
+                categories_product.append(products[i].text) # Products to a list
+                rate = float(ratings[i].text)
+                categories_product_rating.append(round(rate, 1))
+
+                categories_product_price.append(price_current[i].text)
+                csv_file.writerow([i+1, products[i].text, categories_product_price[i], str(categories_product_rating[i]) + "/5.0", "https://www.walmart.com" + categories_product_link[i], "blank"])
+            except IndexError:
+                pass
         
-        for i in range(len(products)):
-            categories_product.append(products[i].text) # Products to a list
-            categories_product_review.append(reviews[i].txt)
-
-            min_price = pricings.find_all("span", {"class": "price-min"})
-            max_price = pricings.find_all("span", {"class": "price-max"})
-            categories_product_price.append(min_price[i].text, max_price[i].text)
-
-            csv_file.writerow([products[i].text, (min_price[i].text, max_price[i].text), reviews[i].text, "TBA"])
-
-    #print("These are the categories names\n\n", categories_names, "\n\n")
-    #print("These are the links\n\n", categories_links, "\n\n")
-    #print("These are the sub links\n\n", categories_sub_links, "\n\n")
-
-    extracted_file = csv.writer(open("walmart_senior_product.csv", "wb"))
-    extracted_file.writerow(["#","Category Name", "Product Name", "Product Price", "Product Rating", "Product Review", "Category Links"])
+        print(categories_names[count] + ".csv file created.\n")
+        count += 1
+        categories_product_price.clear()
+        categories_product_link.clear()
     
-    for i in range(len(categories_names)):
-        extracted_file.writerow([i+1, categories_names[i], "Blank", "Blank", "Blank", "Blank", categories_links[i]])
+    # print("These are the categories names\n\n", categories_names, "\n\n")
+    # print("These are the links\n\n", categories_links, "\n\n")
+    # print("These are the ratings\n\n", categories_product_rating, "\n\n")
+    # print("These are the prices\n\n", categories_product_price, "\n\n")
+    # print("These are the product links\n\n", categories_product_price, "\n\n")
+
+    # extracted_file = csv.writer(open("walmart_senior_product.csv", "wb"))
+    # extracted_file.writerow(["#","Category Name", "Product Name", "Product Price", "Product Rating", "Product Review", "Category Links"])
+
+    # for i in range(len(categories_names)):
+        # extracted_file.writerow([i+1, categories_names[i], "Blank", "Blank", "Blank", "Blank", categories_links[i]])
 
 if __name__ == "__main__":
     main()
