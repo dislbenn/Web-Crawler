@@ -1,25 +1,30 @@
 #!usr/bin/python
 """Web Crawler designed to find products and ratings for products developed and targeting seniors.
 """
-import sys
-import unicodecsv as csv
+import os
 from urllib.request import urlopen
+import unicodecsv as csv
 from bs4 import BeautifulSoup
-from time import sleep
 
 __author__ = "Disaiah Bennett"
 __version__ = "0.1"
 
-class web_crawler:
-    def __init__(self, url=None, page=None, data=None, **kwargs):
+class WebCrawler:
+    """Web Crawler
+    """
+    def __init__(self, url=None, page=None, data=None, clean=None):
+        """This is the inside of my web crawler
+        """
         self.url = url
         self.page = page
         self.data = data
-    
-    def get_url(self):
-        return self.url
+        self.categories = []
+        self.catlinks = []
+        self.clean = clean
 
     def data_extract(self):
+        """Extract the url page data and parses the information with BeautifulSoup
+        """
         self.page = urlopen(self.url)
         self.data = self.page.read()
 
@@ -27,20 +32,36 @@ class web_crawler:
         soup = BeautifulSoup(self.data, "html.parser")
 
         return soup
-        
-def main():
-    url = "https://www.walmart.com/cp/home-health-care/1005860"
-    crawler = web_crawler()
 
-    crawler.url = url # Set the url of the crawler
+    def get_categories(self):
+        """Returns all categories
+        """
+        return self.categories
+
+    def cleanup(self):
+        """Cleans up directory
+        """
+        print("CLEANING FILES\n")
+        self.clean = True
+        try:
+            os.system(". ./move_csv.sh")
+        except OSError:
+            print("CLEANING FAILED")
+        return self.clean
+
+def main():
+    """Extract data from the walmart website and return the information into a csv file.
+    """
+    url = "https://www.walmart.com/cp/home-health-care/1005860"
+    crawler = WebCrawler()
+
+    # Set the url of the crawler
+    crawler.url = url
     soup = crawler.data_extract()
 
-    categories_names = []
-    categories_links = []
-    categories_product = []
-    categories_product_price = []
-    categories_product_link = []
-    categories_product_rating = []
+    cat_product_price = []
+    cat_product_link = []
+    cat_product_rating = []
 
     cat_sidebar_li = soup.find_all("li", {"class": "SideBarMenuModuleItem"})
 
@@ -49,65 +70,65 @@ def main():
         item = category.findAll("span", {"class": "SideBarMenu-title"})
 
         for link in links:
-            categories_links.append(link.get('href'))
-        
+            crawler.catlinks.append(link.get('href'))
+
         for item in category:
             head, _, _ = item.text.partition("-")
             if len(head) > 30:
                 pass
             else:
-                categories_names.append(head)
+                crawler.categories.append(head)
+
     count = 0
-    for i in range(len(categories_names)):
-        csv_file = csv.writer(open(categories_names[i] + ".csv", "wb")) # Open individual CSV File
-        csv_file.writerow(["#", categories_names[i], "Price", "Rating", "Link", "Top Review"]) # Writing header to csv file.
+    for i, _ in enumerate(crawler.categories):
+        # Set the url of the crawler
+        crawler.url = crawler.catlinks[i]
 
-        temp_page = urlopen(categories_links[i]) #opening temp page
-        temp_data = temp_page.read() # Read temp page data
-        temp_page.close() # Close the current page.
-        
-        temp_soup = BeautifulSoup(temp_data, "html.parser") # Parse html data
+        # Open individual CSV File
+        csv_file = csv.writer(open(crawler.categories[i] + ".csv", "wb"))
+        csv_file.writerow(["#", crawler.categories[i], "Price", "Rating", "Link", "Top Review"])
 
-        print("Current Category", categories_names[i], "URL: ", categories_links[i])
-        products = temp_soup.find_all("a", {"class": "product-title-link line-clamp line-clamp-2"}) # Products [Done]
-        ratings = temp_soup.find_all("span", {"class": "seo-avg-rating"}) # Ratings [Done]
-        price_current = temp_soup.find_all("div", {"class": "price-main-block"}) # Price 
-        links = temp_soup.find_all("div", {"class": ["search-result-productimage gridview", "search-result-productimage listview"]}) # Links [Done]
+        # Parse html data
+        soup = crawler.data_extract()
 
-        #print("\n\n", links, "\n\n")
+        print("Current Category", crawler.categories[i], "URL: ", crawler.catlinks[i])
+
+        # Products to a list
+        prods = soup.find_all("a", {"class": "product-title-link line-clamp line-clamp-2"})
+
+        # Ratings [Done]
+        ratings = soup.find_all("span", {"class": "seo-avg-rating"})
+
+        # Price
+        price_current = soup.find_all("div", {"class": "price-main-block"})
+
+        # Links [Done]
+        links = soup.find_all("div", {"class": ["search-result-productimage gridview", "search-result-productimage listview"]})
+
         for link in links:
-            li = link.find_all("a", {"class": "display-block"})
-            for i in range(len(li)):
-                #print(li[i].get("href"))
-                categories_product_link.append(li[i].get("href"))
+            sub_links = link.find_all("a", {"class": "display-block"})
+            for j, _ in enumerate(sub_links):
+                cat_product_link.append(sub_links[j].get("href"))
 
-        for i in range(len(products)): # For i in the range of products total
+        # For k in the range of products total
+        for k, _ in enumerate(prods):
             try:
-                categories_product.append(products[i].text) # Products to a list
-                rate = float(ratings[i].text)
-                categories_product_rating.append(round(rate, 1))
+                rate = float(ratings[k].text)
 
-                categories_product_price.append(price_current[i].text)
-                csv_file.writerow([i+1, products[i].text, categories_product_price[i], str(categories_product_rating[i]) + "/5.0", "https://www.walmart.com" + categories_product_link[i], "blank"])
+                cat_product_rating.append(round(rate, 1))
+                cat_product_price.append(price_current[k].text)
+
+                csv_file.writerow([k+1, prods[k].text, cat_product_price[k], str(cat_product_rating[k]) + "/5.0", "https://www.walmart.com" + cat_product_link[k], "blank"])
+
             except IndexError:
                 pass
-        
-        print(categories_names[count] + ".csv file created.\n")
+
+        print(crawler.categories[count] + ".csv file created.\n")
         count += 1
-        categories_product_price.clear()
-        categories_product_link.clear()
-    
-    # print("These are the categories names\n\n", categories_names, "\n\n")
-    # print("These are the links\n\n", categories_links, "\n\n")
-    # print("These are the ratings\n\n", categories_product_rating, "\n\n")
-    # print("These are the prices\n\n", categories_product_price, "\n\n")
-    # print("These are the product links\n\n", categories_product_price, "\n\n")
-
-    # extracted_file = csv.writer(open("walmart_senior_product.csv", "wb"))
-    # extracted_file.writerow(["#","Category Name", "Product Name", "Product Price", "Product Rating", "Product Review", "Category Links"])
-
-    # for i in range(len(categories_names)):
-        # extracted_file.writerow([i+1, categories_names[i], "Blank", "Blank", "Blank", "Blank", categories_links[i]])
+        cat_product_price.clear()
+        cat_product_link.clear()
+        cat_product_rating.clear()
+    crawler.cleanup()
 
 if __name__ == "__main__":
     main()
