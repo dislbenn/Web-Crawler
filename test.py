@@ -1,6 +1,7 @@
 #!usr/bin/python
 """Test File Web Crawler designed to find products and ratings for products developed and targeting seniors.
 """
+
 import unicodecsv as csv
 from web_crawler import WebCrawler
 

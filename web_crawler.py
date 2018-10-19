@@ -3,6 +3,7 @@
 """
 import os
 from urllib.request import urlopen
+#from urllib import urlopen (python2)
 from bs4 import BeautifulSoup
 
 __author__ = "Disaiah Bennett"
@@ -11,7 +12,7 @@ __version__ = "0.1"
 class WebCrawler:
     """Web Crawler
     """
-    def __init__(self, url=None, page=None, data=None, clean=False, count=0):
+    def __init__(self, url=None, page=None, data=None, clean=False):
         """This is the inside of my web crawler
             url: string - the url
             page: object - the url page.
@@ -27,7 +28,7 @@ class WebCrawler:
         self.categories = []
         self.catlinks = []
         self.clean = clean
-        self.count = count
+        self.count = 0
 
     def data_extract(self):
         """Extract the url page data and parses the information with BeautifulSoup
@@ -90,7 +91,6 @@ class WebCrawler:
             Returns:
                 self.clean: bool - file cleaned.
         """
-        print("CLEANING FILES\n")
         self.clean = True
         try:
             os.system(". ./move_csv.sh")

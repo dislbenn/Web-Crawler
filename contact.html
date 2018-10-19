@@ -6,7 +6,41 @@
         </title>
         <link rel="stylesheet" href="css/web_crawler.css">
     </header>
-    <body>
+
+    <script>
+        function validateForm() {
+            var first_name = document.forms["validForm"]["fname"].value;
+            var last_name = document.forms["validForm"]["lname"].value;
+            var phone_number = document.forms["validForm"]["usrtel"].value;
+            var email_address = document.forms["validForm"]["email"].value;
+            var message = document.forms["validForm"]["message"].value;
+
+            if (first_name == "") {
+                alert("First name must be filled out");
+                return false;
+            }
+            else if (last_name == "") {
+                alert("Last name must be filled out");
+                return false;
+            }
+            else if (phone_number == "") {
+                alert("Phone number must be filled out");
+                return false;
+            }
+            else if (email_address == "") {
+                alert("Email must be filled out");
+                return false;
+            }
+            else{
+                alert("Validating contact information..")
+                alert("First Name: " + first_name + "\nLast Name: " + last_name + "\nPhone: " + phone_number + "\nEmail: " + email_address + "\nMessage: " + message)
+                alert("Contact confirmed")
+                return true;
+            }
+        }
+    </script>
+
+    <body id="contact_background">
         <ul class="nav">
             <li><a href="index.html">Web-Crawler</a></li>
             <li><a href="about.html">About</a></li>
@@ -14,9 +48,17 @@
             <li><a href="progress.html">Progress</a></li>
             <li><a href="contact.html" class="active">Contact</a></li>
         </ul>
-        <div class="heading">
-            <p>
-            </p>
+        <div align="center" class="formbody">
+            <form name="validForm" onsubmit="return validateForm()" action="MAILTO:dlbennett365@students.ecsu.edu" method="POST" enctype="text/plain">
+                <label id="contact">Contact Me</label><br><br>
+                <input type="text" name="fname" placeholder="First name.." class="name" value=""><br>
+                <input type="text" name="lname" placeholder="Last name.." class="name" value=""><br>    
+                <input type="email" name="email" placeholder="Email address.." class="name" pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,3}$"><br>    
+                <input type="tel" name="usrtel" placeholder="123-456-7890" class="name" maxlength="12"><br>
+
+                <textarea name="message" placeholder="Write something..." class="message_text" maxlength="300"></textarea><br><br>
+                <button onclick="submit()" name="submit" id="contact_button">Submit</button><br><br>
+            </form>
         </div>
         <div class="footer">
             <p>Footer</p>
